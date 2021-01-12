@@ -1,1 +1,90 @@
-test
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.21.1/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.1.2/src/wordcloud2.min.js"></script>
+    <style>
+        #my_canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <canvas ref="main" id="my_canvas"></canvas>
+    </div>
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                songs: null,
+                topStyles: []
+            },
+            mounted() {
+                var data = 'http://localhost:8765/downloader/analytics?all=1'
+                this.loadData();
+            },
+            methods: {
+                draw() {
+                    this.$refs.main.width = window.innerWidth
+                    this.$refs.main.height = window.innerHeight
+                    WordCloud(document.getElementById('my_canvas'), { 
+                        gridSize: Math.round(16 * window.innerWidth / 1024),
+                        weightFactor: function (size) {
+                            return Math.pow(size, 2.3) * window.innerWidth / 1024;
+                        },
+                        fontFamily: 'Times, serif',
+                        color: function (word, weight) {
+                            return (weight === 12) ? '#f02222' : '#c09292';
+                        },
+                        rotateRatio: 0.5,
+                        rotationSteps: 2,
+                        backgroundColor: '#ffe0e0',
+                        list: this.topStyles.map(_ => {
+                            return [_.name_cn, _.count]
+                        }) 
+                    });
+                },
+                async loadData() {
+                    const { data } = await axios.get('http://localhost:8765/downloader/analytics?all=1')
+                    this.songs = data.filter(_ => _.raw).map(_ => {
+                        return JSON.parse(_.raw)
+                    })
+                    var byStyles = {};
+                    const topStyles = {};
+                    const styleMeta = {};
+                    for (let index = 0; index < this.songs.length; index++) {
+                        const rawData = this.songs[index];
+                        if(!rawData.styles) continue;
+                        rawData.styles.forEach((_) => {
+                            styleMeta[_.styleName] = _;
+                            topStyles[_.styleName] = topStyles[_.styleName] || 0;
+                            topStyles[_.styleName]++;
+                        });
+                    }
+                    function getTop() {
+                        return Object.keys(topStyles).sort(function(a, b) {
+                                return topStyles[b] - topStyles[a]
+                        }).map(_ => {
+                            var pairs = _.split(" ");
+                            var cnName = pairs.shift();
+                            return {
+                                rawName: _,
+                                name: pairs.join(" "),
+                                name_cn: cnName,
+                                meta: styleMeta[_],
+                                count: topStyles[_]
+                            }
+                        })
+                    }
+                    var topStylesRaw = getTop();
+                    console.log('topStylesRaw', topStylesRaw)
+                    this.topStyles = topStylesRaw
+                    this.draw();
+                }
+            },
+        })
+    </script>
+</body>
+</html>
