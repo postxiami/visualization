@@ -13,14 +13,16 @@
     <style>
         #chartdiv {
             width: 100%;
-            height: 100%;
+            height: 99%;
+            /* margin-bottom: 25px; */
+            position: relative;
         }
 
         .slogn {
             position: fixed;
-            bottom: 12px;
-            right: 10px;
-            font-size: 13px;
+            bottom: 5px;
+            right: 5px;
+            font-size: 12px;
             z-index: 2000;
             color: #aaa
         }
@@ -65,7 +67,7 @@
                         series.accuracy = 4;
                         series.step = 15;
                         series.rotationThreshold = 0.7;
-                        series.maxCount = 200;
+                        series.maxCount = 400;
                         series.minWordLength = 2;
                         series.labels.template.tooltipText = "{word}: {value}";
                         series.fontFamily = "Courier New";
@@ -97,6 +99,7 @@
                     //         return [_.name, _.count]
                     //     })
                     // });
+                    // chart.marginBottom = 10
                 },
                 async loadData() {
                     const { data } = await axios.get('http://localhost:8765/downloader/analytics?all=1')
