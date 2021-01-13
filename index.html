@@ -4,12 +4,8 @@
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios@0.21.1/dist/axios.min.js"></script>
     <style>
-        #my_canvas {
-            width: 100%;
-            height: 100%;
-        }
         body {
-            background: white;
+            text-align: center;
         }
     </style>
 
@@ -18,6 +14,15 @@
         #chartdiv {
             width: 100%;
             height: 100%;
+        }
+
+        .slogn {
+            position: fixed;
+            bottom: 12px;
+            right: 10px;
+            font-size: 13px;
+            z-index: 2000;
+            color: #aaa
         }
     </style>
     
@@ -29,17 +34,16 @@
 </head>
 
 <body>
-
-        <div id="chartdiv"></div>
+    <a class="slogn" target="_blank" href="https://github.com/xiami2021/backup">github.com/xiami2021/backup</a>
     <div id="app">
-        <!-- <canvas ref="main" id="my_canvas"></canvas>
-         -->
+        <div v-if="loading">loading...</div>
+        <div id="chartdiv"></div>
     </div>
     <script>
-    
         var app = new Vue({
             el: '#app',
             data: {
+                loading: true,
                 songs: null,
                 topStyles: []
             },
@@ -49,6 +53,7 @@
             },
             methods: {
                 draw() {
+                    this.loading = false;
                     var self = this;
                     // this.$refs.main.width = window.innerWidth
                     // this.$refs.main.height = window.innerHeight
