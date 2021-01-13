@@ -1,4 +1,5 @@
 <html>
+
 <head>
     <meta charset="utf-8">
     <title>数据可视化</title>
@@ -14,7 +15,9 @@
     <style>
         #chartdiv {
             width: 100%;
-            height: 99%;
+            /* height: 80%; */
+            height:calc(100vh - 130px); 
+            /* padding-top: 20%; */
             /* margin-bottom: 25px; */
             position: relative;
         }
@@ -27,22 +30,26 @@
             z-index: 2000;
             color: #aaa
         }
+        * {
+            padding: 0;
+            margin: 0;
+        }
     </style>
-    
+
     <!-- Resources -->
     <script src="//cdn.amcharts.com/lib/4/core.js"></script>
     <script src="//cdn.amcharts.com/lib/4/charts.js"></script>
     <script src="//cdn.amcharts.com/lib/4/plugins/wordCloud.js"></script>
     <script src="//cdn.amcharts.com/lib/4/themes/animated.js"></script>
     <!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-PEPQ7KZ023"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PEPQ7KZ023"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
 
-  gtag('config', 'G-PEPQ7KZ023');
-</script>
+        gtag('config', 'G-PEPQ7KZ023');
+    </script>
 </head>
 
 <body>
@@ -50,6 +57,10 @@
     <div id="app">
         <div v-if="loading">loading...</div>
         <div id="chartdiv"></div>
+        <div style="text-align: left; margin-top: 10px; padding: 10px 20px; background: #f4f4f4;">
+            <img src="qrcode.png" style="vertical-align: middle; margin-right: 15px;" height="100"/>
+            生成虾米音乐收藏歌曲Tag云
+        </div>
     </div>
     <script>
         var app = new Vue({
@@ -88,13 +99,13 @@
                         var chart = am4core.create("chartdiv", am4plugins_wordCloud.WordCloud);
                         var series = chart.series.push(new am4plugins_wordCloud.WordCloudSeries());
                         series.accuracy = 4;
-                        series.step = 15;
-                        series.rotationThreshold = 0.7;
+                        series.step = 30;
+                        series.rotationThreshold = 0.4;
                         series.maxCount = 400;
                         series.minWordLength = 2;
                         series.labels.template.tooltipText = "{word}: {value}";
                         series.fontFamily = "Courier New";
-                        series.maxFontSize = am4core.percent(30);
+                        series.maxFontSize = am4core.percent(20);
                         series.data = self.topStyles.map(_ => {
                             return {
                                 // tag: _.name,
@@ -164,7 +175,7 @@
             },
         })
 
-       
+
     </script>
 </body>
 
