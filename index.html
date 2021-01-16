@@ -75,19 +75,6 @@
             mounted() {
                 var data = 'http://localhost:8765/downloader/analytics?all=1'
                 this.loadData();
-                // axios.get('http://localhost:8765/api/callAPI', { params: {
-                //     action:  JSON.stringify({
-                //         method: 'mtop.alimusic.music.list.collectservice.getcollectbyuser',
-                //         needToken: true,
-                //         args: {
-                //             userId: '3096251',
-                //             pagingVO: {
-                //                 page: 1,
-                //                 pageSize: 100
-                //             }
-                //         }
-                //     })
-                // }})
             },
             methods: {
                 draw() {
@@ -138,7 +125,11 @@
                     // chart.marginBottom = 10
                 },
                 async loadData() {
-                    const { data } = await axios.get('http://localhost:8765/downloader/analytics?all=1')
+                    const { data } = await axios.get('http://localhost:8765/downloader/analytics?all=1') 
+                    if(data.length === 0) {
+                        alert('请备份虾米数据后，批量备份收藏后再打开本页面！')
+                        return
+                    }
                     this.songs = data.filter(_ => _.raw).map(_ => {
                         return JSON.parse(_.raw)
                     })
