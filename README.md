@@ -2,6 +2,7 @@
 数据可视化及备份
 
 
+### 数据格式化
 ``` js
 function toSimple(type = 'song', raw) {
     if(type === 'song') {
