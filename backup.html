@@ -971,10 +971,10 @@ function download(text, name, type) {
                         userData = await getUserAllFavorites(uid);
                         console.log('userData', userData)
                     } catch (e){
-                        this.starting = false;
                         alert(e.toString())
                         return;
                     }
+                    this.starting = false;
                     // await dataDB.put()
                     var stateDoc = 'state_' + uid;
                      try {
