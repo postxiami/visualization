@@ -874,7 +874,8 @@ function download(text, name, type) {
                     this.totalTask = data.task.length;
                     this.startTask();
                     this.downloading = true;
-                    
+                    this.showDownloader = false;
+                    this.statusBox = true;
                 },
 
                 async loadStatus() {
