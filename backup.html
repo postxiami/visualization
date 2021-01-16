@@ -209,7 +209,7 @@
         </a-modal>
 
 
-        <a-modal v-model="statusBox" :footer="null">
+        <a-modal v-model="statusBox" :width="700" :footer="null">
             <a-card title="备份中..."  :bordered="true" v-if="currentStatus">
                 <div slot="extra">
                     <!-- {{runErrors.length}} -->
@@ -278,9 +278,14 @@
         <a-layout-content>
         <a-row>
         <a-button v-if="dataTabs.length" @click="saveFile" style="margin-top: 10px; margin-bottom: 10px; margin-left: 10px;">保存数据</a-button>
-        <a-button v-if="dataTabs.length" style=" margin-left: 10px" type="primary"  @click="createTask">
+        <a-button v-if="dataTabs.length" style=" margin-left: 10px"  @click="createTask">
             批量备份收藏
         </a-button>
+
+        <a-button v-if="dataTabs.length && currentStatus != null && !currentStatus.isStart && saveDir != null" style=" margin-left: 10px" type="primary" @click="startTask">
+            启动备份
+        </a-button>
+        <!-- {{currentStatus}} -->
         <a-button v-if="dataTabs.length" @click="statusBox = true" style="margin-top: 10px; margin-bottom: 10px; margin-left: 10px;">备份状态
         </a-button>
 
@@ -791,7 +796,7 @@ function download(text, name, type) {
                 let uid = params.get("uid");
                 this.init(uid)
                 if(this.saveDir) {
-                    this.startTask();
+                    // this.startTask();
                 }
 
                 this.loadStatus();
