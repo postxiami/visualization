@@ -347,7 +347,7 @@ async function getUserCollect(userId, pager = {}) {
             page: pager.page || 1,
             pageSize: pager.limit || 100
         }
-    }, true);
+    }, false);
     if(!data.result.data.data) {
         throw new Error(data.result.ret[0]);
     }
@@ -532,7 +532,7 @@ async function getArtistAlbums(objectId, pager = {}) {
             page: 1,
             pageSize: 100
         }
-    }, true);
+    }, false);
     if(!data.result.data.data) {
         throw new Error(data.result.ret[0]);
     }
@@ -543,7 +543,7 @@ async function getSongDetail(songId) {
     const { data } = await rpcCall(
     'mtop.alimusic.music.songservice.getsongdetail', {
         songId: songId
-    }, true);
+    }, false);
     if(!data.result.data.data) {
         throw new Error(data.result.data.ret[0]);
     }
@@ -966,11 +966,15 @@ function download(text, name, type) {
                     } 
 
                     this.starting = true
-                  
-                    const userData = await getUserAllFavorites(uid);
-                    this.starting = false;
-                    console.log('userData', userData)
-
+                    let userData = null
+                    try {
+                        userData = await getUserAllFavorites(uid);
+                        console.log('userData', userData)
+                    } catch (e){
+                        this.starting = false;
+                        alert(e.toString())
+                        return;
+                    }
                     // await dataDB.put()
                     var stateDoc = 'state_' + uid;
                      try {
