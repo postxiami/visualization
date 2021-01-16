@@ -34,11 +34,11 @@
             color: #aaa
         }
 
-        * {
-            padding: 0;
-            margin: 0;
-        }
+    
 
+.ant-table-body {
+      overflow-x: auto !important;
+}
     
     #app-main {
         opacity: 0;
@@ -276,7 +276,7 @@
     <a-layout>
         <a-layout-content>
         <a-row>
-        <a-button v-if="dataTabs.length" @click="startBackup" style="margin-top: 10px; margin-bottom: 10px; margin-left: 10px;">
+        <a-button v-if="dataTabs.length" @click="startBackup()" style="margin-top: 10px; margin-bottom: 10px; margin-left: 10px;">
             重新导出
         </a-button>
         <a-button v-if="dataTabs.length" @click="saveFile" style="margin-top: 10px; margin-bottom: 10px; margin-left: 10px;">保存数据</a-button>
@@ -497,7 +497,7 @@ async function getUserAllFavorites(userId) {
         serizeData.artist = allData.artist.map(_ => toSimple('artist', _))
     }
     // toSimple
-    console.log('spendTime', ( Date.now() - startTime ) / 1000, 'second')
+    console.log('spendTime', ( Date.now() - startTime ) / 1000, 'second', allData)
     return serizeData
 }
 
@@ -615,8 +615,6 @@ async function drillDownCollect(collects, conCount = 10) {
     return structedData;
 }
 
-
-
 function toSimple(type = 'song', raw) {
     if(type === 'song') {
         return {
@@ -660,7 +658,6 @@ function toSimple(type = 'song', raw) {
                     alias: _.alias
                 }
             }),
-            // song_name: raw.songName,
         }
     }
 
@@ -681,22 +678,21 @@ function toSimple(type = 'song', raw) {
         }
     }
 
-
-     if (type === 'collect') {
+    if (type === 'collect') {
         return {
             id: raw.listId,
-            author: raw.userName,
-            avatar: raw.user.avatar,
+            collect_logo: raw.collectLogo,
             name: raw.collectName,
+            description: raw.description,
+
             collects: raw.collects,
             comments: raw.comments,
+            play_count: raw.playCount,
+            views: raw.views,
 
             gmt_create: raw.gmtCreate,
             gmt_modify: raw.gmtModify,
-            play_count: raw.playCount,
             song_count: raw.songCount,
-
-            views: raw.views,
 
             songs: raw.songs && raw.songs.map(_ => {
                 return {
@@ -713,20 +709,11 @@ function toSimple(type = 'song', raw) {
                 }
             }),
 
-            // gender: raw.gender,
-            // play_count: raw.playCount,
-            // recommends: raw.recommends,
-            // roles: raw.roles.map(_ => _.name),
-            // styles: raw.styles.map(_ => {
-            //     return {
-            //         name: _.styleName,
-            //     }
-            // }),
+            author: raw.userName,
+            avatar: raw.user.avatar,
         }
     }
 }
-
-
 
 
 async function creatCache(id) {
@@ -929,7 +916,7 @@ function download(text, name, type) {
                                     title: c,
                                     dataIndex: c
                                 }
-                                if (['album_logo', 'artist_logo', 'avatar'].indexOf(c) > -1) {
+                                if (['album_logo', 'collect_logo', 'artist_logo', 'avatar'].indexOf(c) > -1) {
                                     cloudConfig.scopedSlots = {
                                         customRender: 'imgcover'
                                     }
@@ -964,7 +951,7 @@ function download(text, name, type) {
                         uid = params.get("uid");
                         // this.init(uid)
                     } 
-
+                    console.log('startBackup', uid)
                     this.starting = true
                     let userData = null
                     try {
