@@ -1,0 +1,986 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>备份数据</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ant-design-vue@1.7.2/dist/antd.min.css">
+    <!-- <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.21.1/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.24.0/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ant-design-vue@1.7.2/dist/antd.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.min.js"></script> -->
+    <script src="//cdn.jsdelivr.net/npm/pouchdb@7.2.1/dist/pouchdb.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/pouchdb@7.2.1/dist/pouchdb.find.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-spinner@1.0.4/dist/vue-spinner.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/regenerator-runtime@0.13.7/runtime.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/vue-router/dist/vue-router.js"></script> -->
+    <style>
+        body {
+            background-color: white;
+        }
+    </style>
+
+    <!-- Styles -->
+    <style>
+
+        .slogn {
+            position: fixed;
+            bottom: 5px;
+            left: 5px;
+            font-size: 12px;
+            z-index: 2000;
+            text-align: left;
+            color: #aaa
+        }
+
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+    
+    #app-main {
+        opacity: 0;
+    }
+
+
+    #app-main.appStarted {
+        opacity: 1;
+    }
+
+    #app.appStarted #loading-mask{
+       display: none;
+    }
+
+    #loading-mask {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 100%;
+        user-select: none;
+        z-index: 9999;
+        overflow: hidden
+      }
+    
+      .loading-wrapper {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -100%)
+      }
+    
+      .loading-dot {
+        animation: antRotate 1.2s infinite linear;
+        transform: rotate(45deg);
+        position: relative;
+        display: inline-block;
+        font-size: 64px;
+        width: 64px;
+        height: 64px;
+        box-sizing: border-box
+      }
+    
+      .loading-dot i {
+        width: 22px;
+        height: 22px;
+        position: absolute;
+        display: block;
+        background-color: black;
+        border-radius: 100%;
+        transform: scale(.75);
+        transform-origin: 50% 50%;
+        opacity: .3;
+        animation: antSpinMove 1s infinite linear alternate
+      }
+    
+      .loading-dot i:nth-child(1) {
+        top: 0;
+        left: 0
+      }
+    
+      .loading-dot i:nth-child(2) {
+        top: 0;
+        right: 0;
+        -webkit-animation-delay: .4s;
+        animation-delay: .4s
+      }
+    
+      .loading-dot i:nth-child(3) {
+        right: 0;
+        bottom: 0;
+        -webkit-animation-delay: .8s;
+        animation-delay: .8s
+      }
+    
+      .loading-dot i:nth-child(4) {
+        bottom: 0;
+        left: 0;
+        -webkit-animation-delay: 1.2s;
+        animation-delay: 1.2s
+      }
+    
+      @keyframes antRotate {
+        to {
+          -webkit-transform: rotate(405deg);
+          transform: rotate(405deg)
+        }
+      }
+    
+      @-webkit-keyframes antRotate {
+        to {
+          -webkit-transform: rotate(405deg);
+          transform: rotate(405deg)
+        }
+      }
+    
+      @keyframes antSpinMove {
+        to {
+          opacity: 1
+        }
+      }
+    
+      @-webkit-keyframes antSpinMove {
+        to {
+          opacity: 1
+        }
+      }
+    </style>
+
+    <!-- Resources -->
+    <script src="//cdn.amcharts.com/lib/4/core.js"></script>
+    <script src="//cdn.amcharts.com/lib/4/charts.js"></script>
+    <script src="//cdn.amcharts.com/lib/4/plugins/wordCloud.js"></script>
+    <script src="//cdn.amcharts.com/lib/4/themes/animated.js"></script>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PEPQ7KZ023"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-PEPQ7KZ023');
+    </script>
+</head>
+
+<body>
+    <div class="slogn">
+            <img src="qrcode.png" style="vertical-align: middle; margin-right: 15px; margin-bottom: 10px;" height="100" /><br>
+<a target="_blank" href="https://github.com/xiami2021/backup" style="color: #aaa;">github.com/xiami2021/backup</a>
+          </div>
+   <div id="app" :class="{'appStarted': inited }">
+        <div id="loading-mask">
+            <div class="loading-wrapper"><span class="loading-dot loading-dot-spin"><i></i><i></i><i></i><i></i></span></div>
+        </div>
+
+        <div class="" v-if="starting" style="text-align: center;">
+            <scale-loader class="loading" style="margin-top: 80px; margin-bottom: 10px" :loading="true" color="black">
+            </scale-loader>
+            <div>
+                正在备份<br>
+            </div>
+        </div>
+        <a-modal v-model="showDownloader" title="虾米数据备份">
+                    <!-- <p>{{ totalTask }}首</p> -->
+                    <p>
+                        <a-input v-model="saveDir" placeholder="存储文件夹" />
+                    </p>
+                    <p>
+                        <a-input v-model="user" placeholder="账号" />
+                    </p>
+                    <p>
+                        <a-input type="password" v-model="pwd" placeholder="密码" />
+                    </p>
+                    <p>
+                        <a-checkbox :checked="skipDown" @change="handleChange">
+                            不备份音频资源
+                        </a-checkbox>
+                    </p>
+                    <!-- <div style="border-top: 1px solid #eee; padding-top: 20px">
+                          <scale-loader class="loading" :loading="true" color="black" ></scale-loader>
+                          准备导入歌单..
+                      </div> -->
+                    <template slot="footer">
+                        <a-button type="primary" @click="startDownload" size="large" style="width: 140px;" icon="download">开始备份
+                        </a-button>
+                    </template>
+            </a-card>
+        </a-modal>
+
+
+        <a-modal v-model="statusBox" :footer="null">
+            <a-card title="备份中..."  :bordered="true" v-if="currentStatus">
+                <div slot="extra">
+                    <!-- {{runErrors.length}} -->
+                    <a href="https://xiami2021.github.io/visualization/?v=01021238" target="_blank">
+                        <a-button>数据可视化</a-button>
+                    </a>
+                    <!-- <a-button @click="showGenre">下载数据</a-button> -->
+                    <a-button @click="showError" v-if="runErrors.length">错误{{runErrors.length}}</a-button>
+                </div>
+                <a-row :gutter="16">
+                    <a-col :span="6">
+                        <a-statistic title="速度" :value="currentStatus.status.currentSpeed" style="margin-right: 50px">
+                        </a-statistic>
+                    </a-col>
+                    <a-col :span="6">
+                        <a-statistic title="完成" :value="currentStatus.status.doneTotal" class="demo-class">
+                        </a-statistic>
+                    </a-col>
+                    <a-col :span="6">
+                        <a-statistic title="剩余" :value="currentStatus.status.undone " class="demo-class"> </a-statistic>
+                    </a-col>
+                    <a-col :span="6">
+                        <a-statistic title="失败" :value="currentStatus.status.failedTotal" class="demo-class"> </a-statistic>
+                    </a-col>
+                </a-row>
+            
+            
+                <div style="
+                border-top: 1px solid #eee;
+                padding-top: 10px;
+                margin-top: 20px;
+            ">
+                    <h3>最新备份</h3>
+                    <a-list item-layout="horizontal" :data-source="currentStatus.status.doneTasks">
+                        <a-list-item slot="renderItem" slot-scope="item">
+                            <a-list-item-meta :description="item.artist_name">
+                                <a slot="title" target="_blank">{{ item.song_name }}</a>
+                                <img slot="avatar" :src="item.album_logo" height="55" />
+                            </a-list-item-meta>
+                        </a-list-item>
+                    </a-list>
+                </div>
+                <div style="
+                border-top: 1px solid #eee;
+                padding-top: 10px;
+                margin-top: 20px;
+            ">
+                    <h3>备份失败</h3>
+                    <a-list item-layout="horizontal" :data-source="currentStatus.status.failed.slice(0, 50)">
+                        <a-list-item slot="renderItem" slot-scope="item">
+                            <a-list-item-meta :description="item.artist_name">
+                                <a slot="title" target="_blank">{{ item.song_name }} - {{ item.song_id }}</a>
+                                <img slot="avatar" :src="item.album_logo" height="55" />
+            
+                            </a-list-item-meta>
+                        </a-list-item>
+                    </a-list>
+                </div>
+                <!-- recentTask -->
+                <!-- <p>{{ totalTask }}首</p>
+                    <p>已完成{{ currentStatus.status.doneTasks.length }}首</p>
+                    <p>剩余{{ currentStatus.status.undone }}首</p> -->
+            </a-card>
+        </a-modal>
+    <a-layout>
+        <a-layout-content>
+        <a-row>
+        <a-button  v-if="dataTabs.length" @click="saveFile" style="margin-top: 10px; margin-bottom: 10px; margin-left: 10px;">保存数据</a-button>
+        <a-button  v-if="dataTabs.length" style=" margin-left: 10px" type="primary"  @click="createTask">
+            批量备份收藏
+        </a-button>
+        <a-button @click="statusBox = true" style="margin-top: 10px; margin-bottom: 10px; margin-left: 10px;">备份状态
+        </a-button>
+
+        <a-tabs v-if="dataTabs.length">
+            <a-tab-pane :key="dataTab.type" :tab="`${dataTab.name} (${dataTab.total})`" v-for="dataTab in dataTabs">
+                <a-table bordered :columns="dataTab.columns" :data-source="dataTab.data" :pagination="paginationProps">
+                    <div slot="imgcover" slot-scope="text,record">
+                        <img :src="text" width="100" />
+                        <!-- {{ text }} -->
+                    </div>
+                    <div slot="html" class="custom-desc" slot-scope="text" v-html="text" style="width: 250px"></div>
+                    <pre slot="code" slot-scope="text" v-html="text" style="width: 450px"></pre>
+                </a-table>
+            </a-tab-pane>
+        </a-tabs>
+        </a-row>
+
+        </a-layout-content>
+        </a-layout>
+        <!-- userData -->
+        <!-- <div id="chartdiv"></div> -->
+        <!-- <div style="text-align: left; margin-top: 10px; padding: 10px 20px; background: #f4f4f4;">
+            <img src="qrcode.png" style="vertical-align: middle; margin-right: 15px;" height="100" />
+            <span>备份虾米数据<br>
+                生成虾米音乐收藏歌曲Tag云</span>
+        </div> -->
+    </div>
+    <script>
+    var dataDB = new PouchDB('dataset');
+    var ScaleLoader = VueSpinner.ScaleLoader
+
+var methods = {
+    fav: 'mtop.alimusic.fav.favoriteservice.getfavorites'
+};
+
+const api = axios.create({
+    baseURL: "http://localhost:8765",
+    timeout: 60000,
+});
+
+function rpcCall(method, args, needToken = false) {
+    return axios.get('http://localhost:8765/api/callAPI', {
+        params: {
+            action:  JSON.stringify({
+                method: method,
+                needToken: needToken,
+                args: args
+            })
+        }
+    })
+}
+
+async function getUserCollect(userId, pager = {}) {
+    const { data } = await rpcCall(
+    'mtop.alimusic.music.list.collectservice.getcollectbyuser', {
+        userId: userId,
+        pagingVO: {
+            page: pager.page || 1,
+            pageSize: pager.limit || 100
+        }
+    }, true);
+    if(!data.result.data.data) {
+        throw new Error(data.result.ret[0]);
+    }
+    return data.result.data.data;
+}
+
+
+async function getUserFavorite(userId, type = 'song', pager = {}) {
+    const typeMappings = {
+        'song': 1,
+        'album': 2,
+        'artist': 3,
+        'mv': 4,
+        'collect': 5
+    }
+
+    if(type == 'create_collect') {
+        return await getUserCollect(userId, pager)
+    }
+
+    if(!typeMappings[type]) {
+        throw new Error('not support ' + type );
+    }
+    const { data } = await rpcCall(methods.fav, {
+        userId: userId,
+        type: typeMappings[type],
+        pagingVO: {
+            page: pager.page || 1,
+            pageSize: pager.limit || 100
+        }
+    }, false);
+    if(!data.result.data.data) {
+        throw new Error(data.result.ret[0]);
+    }
+    return data.result.data.data;
+}
+
+const chunk = (arr, size) =>
+  Array.from({ length: Math.ceil(arr.length / size) }, (v, i) =>
+    arr.slice(i * size, i * size + size)
+  );
+
+async function chunkPromise(items, callFun, afterTask, count = 15) {
+    const stepItems = chunk(items, count);
+    console.log('stepItems', stepItems.length)
+    for (let index = 0; index < stepItems.length; index++) {
+        try {
+            const tasks = stepItems[index];
+            const results = await Promise.all(
+                tasks.map((itemData) => {
+                    return callFun(itemData);
+                })
+            );
+            afterTask(results);
+        } catch (e) {
+            console.log("chunkPromise", e);
+        }
+    }
+}
+
+async function getAllFavorites(userId, type = 'song', conCount = 10) {
+  var firstData = await getUserFavorite(userId, type);
+  var allPageData = [];
+  allPageData.push(firstData);
+  if (firstData.pagingVO) {
+    var allPages = []; 
+    var totalPage = parseInt(firstData.pagingVO.pages);
+    for (let index = 2; index <= totalPage; index++) {
+        allPages.push(index);
+    }
+    var allData = [];
+    await chunkPromise(allPages, function(page) {
+        // return new Promise(function(resolve, reject) {
+        //     // getUserFavorite(userId, type, {
+        //     //     page: page
+        //     // }).then(function(rows) {
+        //     //     resolve(rows)
+        //     // });
+        // })
+        return Promise.retry(5, (resolve, reject) => {
+            getUserFavorite(userId, type, {
+                page: page
+            }).then(function (rows) {
+                resolve(rows)
+            }).catch(reject);
+        })
+    }, rows => {
+        console.log('rows', rows)
+        rows.forEach(_ => {
+            allPageData.push(_);
+        })
+    }, conCount)
+  }
+
+  const structedData = [];
+  allPageData.forEach(pageData => {
+    const dataKey = type == 'create_collect' ? 'collect' : type
+    const dataRows = pageData[`${dataKey}s`];
+    if (!dataRows) return;
+    dataRows.forEach(rowItem => {
+        structedData.push(rowItem);
+    })
+  })
+  // console.log("structedData", structedData);
+  return structedData;
+}
+
+async function getUserAllFavorites(userId) {
+    const allData = {};
+    const startTime = Date.now()
+    const allTypes = ['song', 'album', 'artist', 'collect', 'create_collect'];
+    for (let index = 0; index < allTypes.length; index++) {
+        const type = allTypes[index];
+        try {
+            console.log('fetch', type)
+            const typeData = await getAllFavorites(userId, type)
+            allData[type] = typeData
+        } catch (e) {}
+    }
+
+    if(allData.collect) {
+        allData.collect = await drillDownCollect(allData.collect)
+    }
+
+    if(allData.create_collect) {
+        allData.create_collect = await drillDownCollect(allData.create_collect)
+    }
+
+    var serizeData = {};
+    if(allData.collect) {
+        serizeData.collect = allData.collect.map(_ => toSimple('collect', _))
+    }
+
+    if (allData.create_collect) {
+        serizeData.create_collect = allData.create_collect.map(_ => toSimple('collect', _))
+    }
+
+    if (allData.album) {
+        serizeData.album = allData.album.map(_ => toSimple('album', _))
+    }
+
+    if (allData.song) {
+        serizeData.song = allData.song.map(_ => toSimple('song', _))
+    }
+
+    if (allData.artist) {
+        serizeData.artist = allData.artist.map(_ => toSimple('artist', _))
+    }
+    // toSimple
+    console.log('spendTime', ( Date.now() - startTime ) / 1000, 'second')
+    return serizeData
+}
+
+async function getAlbumDetail(albumId) {
+    const { data } = await rpcCall(
+    'mtop.alimusic.music.albumservice.getalbumdetail', {
+        albumId : albumId
+    }, false);
+    if(!data.result.data.data) {
+        throw new Error(data.result.ret[0]);
+    }
+    return data.result.data.data;
+}
+
+async function getArtistDetail(objectId) {
+    const { data } = await rpcCall(
+    'mtop.alimusic.music.artistservice.getartistdetail', {
+        artistId: objectId
+    }, true);
+    if(!data.result.data.data) {
+        throw new Error(data.result.ret[0]);
+    }
+    return data.result.data.data;
+}
+
+
+async function getArtistAlbums(objectId, pager = {}) {
+    const { data } = await rpcCall(
+    'mtop.alimusic.music.albumservice.getartistalbums', {
+        artistId: objectId,
+        pagingVO: {
+            page: 1,
+            pageSize: 100
+        }
+    }, true);
+    if(!data.result.data.data) {
+        throw new Error(data.result.ret[0]);
+    }
+    return data.result.data.data;
+}
+
+async function getSongDetail(songId) {
+    const { data } = await rpcCall(
+    'mtop.alimusic.music.songservice.getsongdetail', {
+        songId: songId
+    }, true);
+    if(!data.result.data.data) {
+        throw new Error(data.result.data.ret[0]);
+    }
+    return data.result.data.data;
+}
+
+async function getCollectSongs(id) {
+    const { data } = await axios.get('http://localhost:8765/api/getCollectSongs', {
+        params: {
+            listId: id
+        }
+    })
+    if(data.error) {
+        throw new Error('failed' + data.error)
+    }
+
+    if(!data.result.resultObj) {
+        throw new Error('failed')
+    }
+    return data.result.resultObj
+}
+
+
+Object.defineProperty(Promise, 'retry', {
+  configurable: true,
+  writable: true,
+  value: function retry (retries, executor) {
+    console.log(`${retries} retries left!`)
+    if (typeof retries !== 'number') {
+      throw new TypeError('retries is not a number')
+    }
+
+    return new Promise(executor).catch(error => retries > 0
+      ? Promise.retry(retries - 1, executor)
+      : Promise.reject(error)
+    )
+  }
+})
+
+
+async function drillDownCollect(collects, conCount = 10) {
+    const structedData = [];
+    await chunkPromise(collects, function(collectItem) {
+        // return new Promise(function(resolve, reject) {
+        //     console.log(collectItem)
+        //     Promise.retry(5, (resolve, reject) => {
+        //         getCollectSongs(collectItem.listId).then(function(rows) {
+        //             resolve(rows)
+        //         }).catch(reject);
+        //     })
+        //     // retryPromise(getCollectSongs, [collectItem.listId], 3,  null).then(function(rows) {
+        //     //     resolve(rows)
+        //     // });
+        //     // getCollectSongs(collectItem.listId).then(function(rows) {
+        //     //     resolve(rows)
+        //     // });
+        // })
+        return Promise.retry(5, (resolve, reject) => {
+            getCollectSongs(collectItem.listId).then(function (rows) {
+                resolve(rows)
+            }).catch(reject);
+        })
+    }, rows => {
+        rows.forEach(rowItem => {
+            structedData.push(rowItem);
+        })
+    }, conCount);
+    console.log('get', collects.length, 'parsed', structedData.length)
+    return structedData;
+}
+
+
+
+function toSimple(type = 'song', raw) {
+    if(type === 'song') {
+        return {
+            album_logo: raw.albumLogo,
+            album_name: raw.albumName,
+            artist_name: raw.artistName,
+            artist_alias: raw.artistAlias,
+            artists: raw.artistVOs && raw.artistVOs.map(_ => {
+                return {
+                    name: _.artistName,
+                    id: _.artistId,
+                    alias: _.alias
+                }
+            }),
+            song_name: raw.songName,
+            song_id: raw.songId,
+            song_writes: raw.songwriters
+        }
+    }
+
+    if (type === 'album') {
+        return {
+            album_id: raw.albumId,
+            album_logo: raw.albumLogo,
+            company: raw.company,
+            language: raw.language,
+            play_count: raw.playCount,
+            recommends: raw.recommends,
+            album_category: raw.albumCategory,
+            publish: raw.gmtPublish,
+            album_name: raw.albumName,
+            artist_name: raw.artistName,
+            artist_id: raw.artistId,
+            artists: raw.artists.map(_ => {
+                return {
+                    comments: _.comments,
+                    description: _.description,
+                    area: _.area,
+                    name: _.artistName,
+                    id: _.artistId,
+                    alias: _.alias
+                }
+            }),
+            // song_name: raw.songName,
+        }
+    }
+
+    if (type === 'artist') {
+        return {
+            artist_logo: raw.artistLogo,
+            alias: raw.alias,
+            artist_id: raw.artistId,
+            artist_name: raw.artistName,
+            area: raw.area,
+            comments: raw.comments,
+            likes: raw.countLikes,
+            gender: raw.gender,
+            play_count: raw.playCount,
+            recommends: raw.recommends,
+            roles: raw.roles && raw.roles.map(_ => _.name),
+            styles: raw.styles && raw.styles.map(_ =>  _.styleName),
+        }
+    }
+
+
+     if (type === 'collect') {
+        return {
+            id: raw.listId,
+            author: raw.userName,
+            avatar: raw.user.avatar,
+            name: raw.collectName,
+            collects: raw.collects,
+            comments: raw.comments,
+
+            gmt_create: raw.gmtCreate,
+            gmt_modify: raw.gmtModify,
+            play_count: raw.playCount,
+            song_count: raw.songCount,
+
+            views: raw.views,
+
+            songs: raw.songs && raw.songs.map(_ => {
+                return {
+                    description: _.description,
+                    album_id: _.albumId,
+                    language: _.albumLanguage,
+                    album_name: _.albumName,
+                    artist_name: _.artistName,
+                    composer: _.composer,
+                    arrangement: _.arrangement,
+                    song_name: _.songName,
+                    songwriters: _.songwriters,
+                    singers: _.singers,
+                }
+            }),
+
+            // gender: raw.gender,
+            // play_count: raw.playCount,
+            // recommends: raw.recommends,
+            // roles: raw.roles.map(_ => _.name),
+            // styles: raw.styles.map(_ => {
+            //     return {
+            //         name: _.styleName,
+            //     }
+            // }),
+        }
+    }
+}
+
+
+
+
+async function creatCache(id) {
+    const { data } = await axios.post('http://localhost:8765/api/cache/create', {
+        data : {
+            rows: [
+                {
+                    object_id: 1,
+                    type: 'favorite',
+                    raw: JSON.stringify()
+                }
+            ]
+        }
+    })
+    if(data.error) {
+        throw new Error('failed' + data.error)
+    }
+
+    if(!data.result.resultObj) {
+        throw new Error('failed')
+    }
+    return data.result.resultObj
+}
+
+function download(text, name, type) {
+        var file = new Blob([text], { type: type });
+        var isIE = /*@cc_on!@*/false || !!document.documentMode;
+        if (isIE) {
+            window.navigator.msSaveOrOpenBlob(file, name);
+        }
+        else {
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(file);
+            a.download = name;
+            a.click();
+        }
+    }
+
+        var app = new Vue({
+            el: '#app',
+            components: {
+                ScaleLoader: ScaleLoader
+            },
+            data: {
+                      runErrors: [],
+                statusBox: false,
+                skipDown: false,
+                saveDir: null,
+                user: null,
+                pwd: null,
+                showDownloader: false,
+                currentStatus: null,
+                starting: false,
+                inited: false,
+                loading: true,
+                userData: null,
+                songs: null,
+                topStyles: [],
+                dataTabs: [],
+            },
+            mounted() {
+                this.inited = true;
+                this.saveDir = window.localStorage.getItem('saveDir')
+                this.user = window.localStorage.getItem('user')
+                this.pwd = window.localStorage.getItem('pwd')
+
+                let params = (new URL(document.location)).searchParams;
+                let uid = params.get("uid");
+                this.init(uid)
+                if(this.saveDir) {
+                    this.startTask();
+                }
+
+                this.loadStatus();
+                this.timer = setInterval(() => {
+                    this.loadStatus();
+                }, 3000);
+            },
+            computed: {
+                paginationProps() {
+                    return {
+                        showSizeChanger: true,
+                        current: this.currentPage,
+                        pageSizeOptions: ['25', '96', '200', '800'],
+                        defaultPageSize: 25,
+                        showTotal: total => `全部 ${total} 结果`,
+                        onChange: (page, pageSize) => {
+                            this.currentPage = page
+                            console.log(page, pageSize)
+                            this.goTop();
+                        }
+                    }
+                }
+            },
+             watch: {
+                saveDir() {
+                    window.localStorage.setItem('saveDir', this.saveDir)
+                },
+                user() {
+                    window.localStorage.setItem('user', this.user)
+                },
+                pwd() {
+                    window.localStorage.setItem('pwd', this.pwd)
+                }
+            },
+            methods: {
+                showError() {
+                    this.$info({
+                        title: '错误内容',
+                        content: JSON.stringify(this.runErrors, null, 2)
+                    });
+                },
+                //  async createTask() {
+                //     const { data } = await api.get('/downloader/create', {
+                //     })
+                //     this.totalTask = data.task.length;
+                //     return data;
+                // },
+                async startTask() {
+                    try {
+                        var taskP = {
+                            // skipDownload: 1,
+                            saveDir: this.saveDir,
+                            user: this.user,
+                            pwd: this.pwd
+                        }
+
+                        if (this.skipDown) {
+                            taskP.skipDownload = 1;
+                        }
+                        const { data } = await api.get('/downloader/start', {
+                            params: taskP
+                        })
+                    } catch (e) {
+                        alert('start error=' + e.toString());
+                    }
+                },
+                async startDownload() {
+                    if (!this.saveDir) {
+                        this.$info({
+                            title: '提示',
+                            content: '存储文件夹不能为空, 账号、密码'
+                        });
+                        return;
+                    }
+                    const { data } = await api.post('/downloader/create', {
+                        data: {
+                            songIds: this.userData.song.map(_ => _.song_id)
+                        }
+                    })
+                    this.totalTask = data.task.length;
+                    this.startTask();
+                    this.downloading = true;
+                    
+                },
+
+                async loadStatus() {
+                    const { data } = await api.get('/downloader/status')
+                    this.currentStatus = data;
+                    this.runErrors = data.status.runErrors;
+                    this.recentTasks = data.status.doneTasks.reverse().slice(0, 50)
+                },
+
+                handleChange(e) {
+                    this.skipDown = e.target.checked;
+                },
+                createTask () {
+                    this.showDownloader = true
+                },
+                saveFile() {
+                    // console.log(this.userData)
+                    download(JSON.stringify(this.userData), 'backup.json', 'application/json');
+                },
+                goTop() {
+                    document.body.scrollTop = 0
+                },
+                async init(uid) {
+                    try {
+                        const eDoc = await dataDB.get('state_'+ uid)
+                        // eDoc.state = userData
+                        // eDoc.time = Date.now()
+                        // await dataDB.put(eDoc)
+                        this.vis(eDoc.state)
+                    } catch (e) {
+                        console.log(e);
+                        this.startBackup(uid)
+                    }
+                },
+
+                vis(userData) {
+                    this.userData = userData
+                    this.dataTabs = Object.keys(userData).map(_ => {
+                        return {
+                            name: _,
+                            type: _,
+                            columns: Object.keys(userData[_][0]).map(c => {
+                                var cloudConfig = {
+                                    title: c,
+                                    dataIndex: c
+                                }
+                                if (['album_logo', 'artist_logo', 'avatar'].indexOf(c) > -1) {
+                                    cloudConfig.scopedSlots = {
+                                        customRender: 'imgcover'
+                                    }
+                                }
+
+                                if ([
+                                    'views',
+                                    'collects',
+                                    'likes',
+                                    'play_count',
+                                    'recommends',
+                                    'comments'].indexOf(c) > -1) {
+                                    cloudConfig.sorter = (a, b) => {
+                                        // console.log('sort', a, b)
+                                        return a[c] - b[c]
+                                    };
+                                }
+
+
+                                // scopedSlots: { customRender: 'imgcover' },
+                                return cloudConfig
+                            }),
+                            total: userData[_].length,
+                            data: userData[_]
+                        }
+                    })
+
+                },
+                async startBackup(uid) {
+                    this.starting = true
+                  
+                    const userData = await getUserAllFavorites(uid);
+                    this.starting = false;
+                    console.log('userData', userData)
+
+                    // await dataDB.put()
+                    var stateDoc = 'state_' + uid;
+                     try {
+                        const eDoc = await dataDB.get(stateDoc)
+                        eDoc.state = userData
+                        eDoc.time = Date.now()
+                        await dataDB.put(eDoc)
+                    } catch (e) {
+                        console.log('update failed try create')
+                        await dataDB.put({
+                            _id: stateDoc,
+                            state: userData,
+                            time: Date.now()
+                        })
+                    }
+
+                    this.vis(userData);
+                   
+                }
+            },
+        })
+
+
+    </script>
+</body>
+
+</html>
