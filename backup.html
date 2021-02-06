@@ -183,20 +183,40 @@
                 正在备份<br>
             </div>
         </div>
+        <a-modal v-model="showSub" title="歌单详情" :width="900">
+            <a-table bordered :columns="viewColumns" :data-source="viewSongs" :pagination="paginationProps">
+                <div slot="imgcover" slot-scope="text,record">
+                    <img :src="text" width="100" />
+                    <!-- {{ text }} -->
+                </div>
+                <div slot="download" slot-scope="text,record">
+                    <a-button icon="download" @click="createTask(record.songs)">
+                        备份该歌单歌曲
+                    </a-button>
+                </div>
+                <div slot="subtable" slot-scope="text,record">
+                    <a-button @click="viewData(record.songs)">
+                        歌曲列表
+                    </a-button>
+                </div>
+                <div slot="html" class="custom-desc" slot-scope="text" v-html="text" style="width: 250px"></div>
+                <pre slot="code" slot-scope="text" v-html="text" style="width: 450px"></pre>
+            </a-table>
+        </a-modal>
         <a-modal v-model="showDownloader" title="虾米数据备份">
             <!-- <p>{{ totalTask }}首</p> -->
             <p>
-                <a-input v-model="saveDir" placeholder="存储文件夹" />
+                <a-input v-model="saveDir" placeholder="存储文件夹 如： F:\allsong" />
             </p>
             <p>
-                <a-input v-model="user" placeholder="账号" />
+                <a-input v-model="user" placeholder="账号（提供有隐藏buff）" />
             </p>
             <p>
-                <a-input type="password" v-model="pwd" placeholder="密码" />
+                <a-input type="password" v-model="pwd" placeholder="密码（提供有隐藏buff）" />
             </p>
             <p>
                 <a-checkbox :checked="skipDown" @change="handleChange">
-                    不备份音频资源
+                    不备份音频资源 (更快生成TAG云)
                 </a-checkbox>
             </p>
             <p>
@@ -274,10 +294,6 @@
                         </a-list-item>
                     </a-list>
                 </div>
-                <!-- recentTask -->
-                <!-- <p>{{ totalTask }}首</p>
-                    <p>已完成{{ currentStatus.status.doneTasks.length }}首</p>
-                    <p>剩余{{ currentStatus.status.undone }}首</p> -->
             </a-card>
         </a-modal>
         <a-layout>
@@ -289,6 +305,8 @@
                     </a-button>
                     <a-button v-if="dataTabs.length" @click="saveFile"
                         style="margin-top: 10px; margin-bottom: 10px; margin-left: 10px;">下载数据</a-button>
+                    <!-- <a-button v-if="dataTabs.length" @click="saveFile(true)" style="margin-top: 10px; margin-bottom: 10px; margin-left: 10px;">
+                        下载数据(Excel)</a-button> -->
                     <a-button icon="download" v-if="dataTabs.length" style=" margin-left: 10px"
                         @click="createTask(userData.song)">
                         备份所有收藏歌曲
@@ -315,6 +333,11 @@
                                 <div slot="download" slot-scope="text,record">
                                     <a-button icon="download" @click="createTask(record.songs)">
                                         备份该歌单歌曲
+                                    </a-button>
+                                </div>
+                                <div slot="subtable" slot-scope="text,record">
+                                    <a-button @click="viewData(record.songs)">
+                                        歌曲列表
                                     </a-button>
                                 </div>
                                 <div slot="html" class="custom-desc" slot-scope="text" v-html="text"
@@ -543,6 +566,7 @@
             }
             return data.result.data.data;
         }
+
 
 
         async function getArtistAlbums(objectId, pager = {}) {
@@ -779,12 +803,46 @@
                 ScaleLoader: ScaleLoader
             },
             data: {
+                viewColumns: [
+                // song_id: _.songId,
+                //     description: _.description,
+                //     album_id: _.albumId,
+                //     language: _.albumLanguage,
+                //     album_name: _.albumName,
+                //     artist_name: _.artistName,
+                //     composer: _.composer,
+                //     arrangement: _.arrangement,
+                //     song_name: _.songName,
+                //     songwriters: _.songwriters,
+                //     singers: _.singers,
+                    {
+                        title: 'song_name',
+                        dataIndex: 'song_name'
+                    },
+                    {
+                        title: 'artist_name',
+                        dataIndex: 'artist_name'
+                    }, {
+                        title: 'album_name',
+                        dataIndex: 'album_name'
+                    },
+                    {
+                        title: 'description',
+                        dataIndex: 'description'
+                    },
+                    {
+                        title: 'composer',
+                        dataIndex: 'composer'
+                    }
+                ],
+                viewSongs: [],
                 runErrors: [],
                 statusBox: false,
                 useMaxSize: false,
                 skipDown: false,
                 saveDir: null,
                 user: null,
+                showSub: false,
                 pwd: null,
                 currentPage: 1,
                 showDownloader: false,
@@ -930,13 +988,21 @@
                 goTop() {
                     document.body.scrollTop = 0
                 },
+
+                viewData (songs) {
+                    this.viewSongs = songs
+                    this.showSub = true;
+                },
                 async init(uid) {
                     try {
                         const eDoc = await dataDB.get('state_' + uid)
-                        // eDoc.state = userData
-                        // eDoc.time = Date.now()
-                        // await dataDB.put(eDoc)
-                        this.vis(eDoc.state)
+                        console.log('eDoc', eDoc);
+                        if(eDoc.state && Object.keys(eDoc.state).length > 2) {
+                            this.vis(eDoc.state)
+                        } else {
+                            alert('数据错误，准备重新导出')
+                            throw new Error('data error')
+                        }
                     } catch (e) {
                         console.log(e);
                         this.startBackup(uid)
@@ -947,8 +1013,6 @@
                     this.userData = userData
                     this.dataTabs = Object.keys(userData).map(_ => {
                         if(userData[_].length == 0) return null;
-
-
 
                         const allColumns = Object.keys(userData[_][0]).map(c => {
                             var cloudConfig = {
@@ -987,7 +1051,17 @@
                                     customRender: 'download'
                                 }
                             });
+                            allColumns.unshift({
+                                title: 'songs',
+                                dataIndex: _,
+                                scopedSlots: {
+                                    customRender: 'subtable'
+                                }
+                            });
                         }
+
+                       
+
                         // download
                         return {
                             name: _,
