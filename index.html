@@ -17,7 +17,8 @@
         #chartdiv {
             width: 100%;
             /* height: 80%; */
-            height: calc(100vh - 130px);
+            /* height: calc(100vh - 130px); */
+            height: calc(100vh - 15px);
             /* padding-top: 20%; */
             /* margin-bottom: 25px; */
             position: relative;
@@ -39,10 +40,10 @@
     </style>
 
     <!-- Resources -->
-    <script src="//cdn.amcharts.com/lib/4/core.js"></script>
-    <script src="//cdn.amcharts.com/lib/4/charts.js"></script>
-    <script src="//cdn.amcharts.com/lib/4/plugins/wordCloud.js"></script>
-    <script src="//cdn.amcharts.com/lib/4/themes/animated.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/plugins/wordCloud.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
     <!-- Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-PEPQ7KZ023"></script>
     <script>
@@ -59,10 +60,11 @@
     <div id="app">
         <div v-if="loading">loading...</div>
         <div id="chartdiv"></div>
-        <div style="text-align: left; margin-top: 10px; padding: 10px 20px; background: #f4f4f4;">
+        <img src="qrcode.png" style="position: absolute; left: 0; bottom: 0;" height="100" />
+        <!-- <div style="text-align: left; margin-top: 10px; padding: 10px 20px; background: #f4f4f4;">
             <img src="qrcode.png" style="vertical-align: middle; margin-right: 15px;" height="100" />
             生成虾米音乐收藏歌曲Tag云
-        </div>
+        </div> -->
     </div>
     <script>
         var app = new Vue({
@@ -104,6 +106,7 @@
                         });
                         series.dataFields.word = "tag";
                         series.dataFields.value = "weight";
+                        series.colors = new am4core.ColorSet();
                         console.log('series', series)
                     }); // end am4core.ready()
                     // WordCloud(document.getElementById('my_canvas'), {
@@ -125,9 +128,9 @@
                     // chart.marginBottom = 10
                 },
                 async loadData() {
-                    const { data } = await axios.get('http://localhost:8765/downloader/analytics?all=1') 
-                    if(data.length === 0) {
-                        alert('请备份虾米数据后，批量备份收藏后再打开本页面！')
+                    const { data } = await axios.get('http://localhost:8765/downloader/analytics?all=1')
+                    if (data.length === 0) {
+                        alert('请备份虾米数据后，【备份所有收藏歌曲】后再打开本页面， 数据是基于已完成的歌曲标签来的！')
                         return
                     }
                     this.songs = data.filter(_ => _.raw).map(_ => {
