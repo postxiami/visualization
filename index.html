@@ -5,6 +5,10 @@
     <title>数据可视化</title>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios@0.21.1/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/vue-lazyload/vue-lazyload.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ant-design-vue@1.7.2/dist/antd.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/ant-design-vue@1.7.2/dist/antd.min.js"></script>
     <style>
         body {
             text-align: center;
@@ -50,7 +54,6 @@
         window.dataLayer = window.dataLayer || [];
         function gtag() { dataLayer.push(arguments); }
         gtag('js', new Date());
-
         gtag('config', 'G-PEPQ7KZ023');
     </script>
 </head>
@@ -58,29 +61,59 @@
 <body>
     <a class="slogn" target="_blank" href="https://github.com/xiami2021/backup">github.com/xiami2021/backup</a>
     <div id="app">
-        <div v-if="loading">loading...</div>
-        <div id="chartdiv"></div>
-        <img src="qrcode.png" style="position: absolute; left: 0; bottom: 0;" height="100" />
-        <!-- <div style="text-align: left; margin-top: 10px; padding: 10px 20px; background: #f4f4f4;">
-            <img src="qrcode.png" style="vertical-align: middle; margin-right: 15px;" height="100" />
-            生成虾米音乐收藏歌曲Tag云
-        </div> -->
+        <div style="padding-top: 10%" v-show="switchBox">
+           <p>可视化类型：</p>
+           <p>
+                <a-button style="margin-right: 15px" icon="cloud" @click="show('tag')">
+                    风格标签云
+                </a-button>
+                <a-button icon="table" style="margin-right: 15px" @click="show('cover')">
+                    专辑墙
+                </a-button>
+                <a-button icon="cloud" style="margin-right: 15px" @click="show('artist_tag')">
+                    艺术家标签云
+                </a-button>
+                    <a-button icon="table" @click="show('artist_cover')">
+                        艺术家墙
+                    </a-button>
+           </p>
+        </div>
+        <div v-if="!switchBox">
+            <div v-if="loading">loading...</div>
+            <div id="chartdiv" v-show="showTag"></div>
+            <img src="qrcode.png" style="position: absolute; left: 0; bottom: 0;" height="100" />
+            <!-- <div style="text-align: left; margin-top: 10px; padding: 10px 20px; background: #f4f4f4;">
+                        <img src="qrcode.png" style="vertical-align: middle; margin-right: 15px;" height="100" />
+                        生成虾米音乐收藏歌曲Tag云
+                    </div> -->
+            <div v-if="allAlbumsItems.length">
+                <img v-lazy="item.cover" v-for="item in allAlbumsItems" height="80" width="80" />
+            </div>
+        </div>
+       
     </div>
     <script>
+          Vue.use(VueLazyload);
         var app = new Vue({
             el: '#app',
             data: {
+                switchBox: true,
+                showTag: false,
                 loading: true,
                 songs: null,
-                topStyles: []
+                type: 'tag',
+                topStyles: [],
+                allAlbumsItems: []
             },
             mounted() {
-                var data = 'http://localhost:8765/downloader/analytics?all=1'
-                this.loadData();
+                // var data = 'http://localhost:8765/downloader/analytics?all=1'
             },
             methods: {
+                show(type) {
+                    this.switchBox = false;
+                    this.loadData(type);
+                },
                 draw() {
-                    this.loading = false;
                     var self = this;
                     // this.$refs.main.width = window.innerWidth
                     // this.$refs.main.height = window.innerHeight
@@ -96,7 +129,7 @@
                         series.minWordLength = 2;
                         series.labels.template.tooltipText = "{word}: {value}";
                         series.fontFamily = "Courier New";
-                        series.maxFontSize = am4core.percent(20);
+                        series.maxFontSize = am4core.percent(22);
                         series.data = self.topStyles.map(_ => {
                             return {
                                 // tag: _.name,
@@ -127,7 +160,7 @@
                     // });
                     // chart.marginBottom = 10
                 },
-                async loadData() {
+                async loadData(type) {
                     const { data } = await axios.get('http://localhost:8765/downloader/analytics?all=1')
                     if (data.length === 0) {
                         alert('请备份虾米数据后，【备份所有收藏歌曲】后再打开本页面， 数据是基于已完成的歌曲标签来的！')
@@ -139,34 +172,83 @@
                     var byStyles = {};
                     const topStyles = {};
                     const styleMeta = {};
+                    const allAlbums  = {};
+
+                    console.log('data sample', this.songs[0])
+                    var logoKey = type === 'cover' ? 'albumLogo' : 'artistLogo';
+                    var tagKey = type === 'tag' ? 'styleName' : 'artistName';
+                    var isStyle = type === 'tag';
+
                     for (let index = 0; index < this.songs.length; index++) {
                         const rawData = this.songs[index];
                         if (!rawData.styles) continue;
-                        rawData.styles.forEach((_) => {
-                            styleMeta[_.styleName] = _;
-                            topStyles[_.styleName] = topStyles[_.styleName] || 0;
-                            topStyles[_.styleName]++;
-                        });
+                        allAlbums[rawData[logoKey]] = allAlbums[rawData[logoKey]] || 0;
+                        allAlbums[rawData[logoKey]]++;
+
+                        if(isStyle) {
+                            rawData.styles.forEach((_) => {
+                                styleMeta[_.styleName] = _;
+                                topStyles[_.styleName] = topStyles[_.styleName] || 0;
+                                topStyles[_.styleName]++;
+                            });
+                        } else {
+                            topStyles[rawData[tagKey]] = topStyles[rawData[tagKey]] || 0;
+                            topStyles[rawData[tagKey]]++;
+                        }
                     }
                     function getTop() {
                         return Object.keys(topStyles).sort(function (a, b) {
                             return topStyles[b] - topStyles[a]
                         }).map(_ => {
-                            var pairs = _.split(" ");
-                            var cnName = pairs.shift();
-                            return {
-                                rawName: _,
-                                name: pairs.join(" "),
-                                name_cn: cnName,
-                                meta: styleMeta[_],
-                                count: topStyles[_]
+
+                            if(isStyle) {
+                                var pairs = _.split(" ");
+                                var cnName = pairs.shift();
+                                return {
+                                    rawName: _,
+                                    name: pairs.join(" "),
+                                    name_cn: cnName,
+                                    meta: styleMeta[_],
+                                    count: topStyles[_]
+                                }
+                            } else {
+                                  var pairs = _.split(" ");
+                                var cnName = pairs.shift();
+                                return {
+                                    name_cn: _,
+                                    count: topStyles[_]
+                                }
                             }
                         })
                     }
                     var topStylesRaw = getTop();
                     console.log('topStylesRaw', topStylesRaw)
-                    this.topStyles = topStylesRaw
-                    this.draw();
+                    if (!isStyle) {
+                        topStylesRaw = topStylesRaw.slice(0, 200)
+                    }
+
+                    this.topStyles = topStylesRaw;
+                  
+                    // let params = (new URL(document.location)).searchParams;
+                    // let type = params.get("type") || 'tag';
+                    if(type.indexOf('tag') > -1) {
+                        this.showTag = true;
+                        this.draw();
+                    }
+
+                    if(type == 'cover' || type == 'artist_cover') {
+                          var allAlbumsItems = Object.keys(allAlbums).sort(function (a, b) {
+                            return allAlbums[b] - allAlbums[a]
+                        }).map(_ => {
+                            return {
+                                cover: _,
+                                count: allAlbums[_]
+                            }
+                        })
+                        this.allAlbumsItems = allAlbumsItems
+                        console.log('allAlbumsItems', allAlbumsItems)
+                    }
+                    this.loading = false;
                 }
             },
         })
