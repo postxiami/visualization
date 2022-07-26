@@ -1,0 +1,552 @@
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Mint</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.21.1/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/vue-lazyload/vue-lazyload.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ant-design-vue@1.7.2/dist/antd.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/ant-design-vue@1.7.2/dist/antd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.6.9/dist/ethers.umd.js"></script>
+    <style>
+        body {
+            text-align: center;
+            background-color: white;
+        }
+    </style>
+
+    <!-- Styles -->
+    <style>
+        #chartdiv {
+            width: 100%;
+            /* height: 80%; */
+            /* height: calc(100vh - 130px); */
+            height: calc(100vh - 15px);
+            /* padding-top: 20%; */
+            /* margin-bottom: 25px; */
+            position: relative;
+        }
+
+        .slogn {
+            position: fixed;
+            bottom: 5px;
+            right: 5px;
+            font-size: 12px;
+            z-index: 2000;
+            color: #aaa
+        }
+
+        * {
+            padding: 0;
+            margin: 0;
+        }
+    </style>
+
+    <!-- Resources -->
+    <script src="https://cdn.amcharts.com/lib/4/core.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/plugins/wordCloud.js"></script>
+    <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PEPQ7KZ023"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-PEPQ7KZ023');
+    </script>
+</head>
+
+<body>
+    <script>
+        // const logger = log4js.getLogger("Mint-Bot");
+            const Wallet = ethers.Wallet;
+            const LedgerABI = [
+                {
+                    inputs: [
+                        { internalType: "uint256", name: "_maxSupply", type: "uint256" },
+                        { internalType: "string", name: "_baseTokenURI", type: "string" },
+                        { internalType: "string", name: "_baseContractURI", type: "string" },
+                        { internalType: "string", name: "_name", type: "string" },
+                        { internalType: "string", name: "_symbol", type: "string" },
+                    ],
+                    stateMutability: "nonpayable",
+                    type: "constructor",
+                },
+                { inputs: [], name: "AccountAlreadyMintedMax", type: "error" },
+                { inputs: [], name: "ContractCantMint", type: "error" },
+                { inputs: [], name: "ContractLocked", type: "error" },
+                { inputs: [], name: "InsufficientFunds", type: "error" },
+                { inputs: [], name: "InvalidBaseContractURL", type: "error" },
+                { inputs: [], name: "InvalidBaseURI", type: "error" },
+                { inputs: [], name: "InvalidMintPrice", type: "error" },
+                { inputs: [], name: "InvalidSignature", type: "error" },
+                { inputs: [], name: "MintNotAvailable", type: "error" },
+                { inputs: [], name: "MintPriceAlreadyUpdated", type: "error" },
+                { inputs: [], name: "NewSignerCantBeZero", type: "error" },
+                { inputs: [], name: "NotOwner", type: "error" },
+                { inputs: [], name: "NothingToWithdraw", type: "error" },
+                { inputs: [], name: "SupplyLimitReached", type: "error" },
+                { inputs: [], name: "TokenDoesNotExist", type: "error" },
+                { inputs: [], name: "WithdrawFailed", type: "error" },
+                {
+                    anonymous: false,
+                    inputs: [
+                        {
+                            indexed: true,
+                            internalType: "address",
+                            name: "owner",
+                            type: "address",
+                        },
+                        {
+                            indexed: true,
+                            internalType: "address",
+                            name: "spender",
+                            type: "address",
+                        },
+                        { indexed: true, internalType: "uint256", name: "id", type: "uint256" },
+                    ],
+                    name: "Approval",
+                    type: "event",
+                },
+                {
+                    anonymous: false,
+                    inputs: [
+                        {
+                            indexed: true,
+                            internalType: "address",
+                            name: "owner",
+                            type: "address",
+                        },
+                        {
+                            indexed: true,
+                            internalType: "address",
+                            name: "operator",
+                            type: "address",
+                        },
+                        { indexed: false, internalType: "bool", name: "approved", type: "bool" },
+                    ],
+                    name: "ApprovalForAll",
+                    type: "event",
+                },
+                {
+                    anonymous: false,
+                    inputs: [
+                        { indexed: true, internalType: "address", name: "user", type: "address" },
+                        {
+                            indexed: true,
+                            internalType: "address",
+                            name: "newOwner",
+                            type: "address",
+                        },
+                    ],
+                    name: "OwnerUpdated",
+                    type: "event",
+                },
+                {
+                    anonymous: false,
+                    inputs: [
+                        { indexed: true, internalType: "address", name: "from", type: "address" },
+                        { indexed: true, internalType: "address", name: "to", type: "address" },
+                        { indexed: true, internalType: "uint256", name: "id", type: "uint256" },
+                    ],
+                    name: "Transfer",
+                    type: "event",
+                },
+                {
+                    inputs: [
+                        { internalType: "address", name: "spender", type: "address" },
+                        { internalType: "uint256", name: "id", type: "uint256" },
+                    ],
+                    name: "approve",
+                    outputs: [],
+                    stateMutability: "nonpayable",
+                    type: "function",
+                },
+                {
+                    inputs: [{ internalType: "address", name: "owner", type: "address" }],
+                    name: "balanceOf",
+                    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+                    stateMutability: "view",
+                    type: "function",
+                },
+                {
+                    inputs: [{ internalType: "uint256", name: "id", type: "uint256" }],
+                    name: "burn",
+                    outputs: [],
+                    stateMutability: "nonpayable",
+                    type: "function",
+                },
+                {
+                    inputs: [],
+                    name: "contractURI",
+                    outputs: [{ internalType: "string", name: "", type: "string" }],
+                    stateMutability: "view",
+                    type: "function",
+                },
+                {
+                    inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+                    name: "getApproved",
+                    outputs: [{ internalType: "address", name: "", type: "address" }],
+                    stateMutability: "view",
+                    type: "function",
+                },
+                {
+                    inputs: [
+                        { internalType: "address", name: "", type: "address" },
+                        { internalType: "address", name: "", type: "address" },
+                    ],
+                    name: "isApprovedForAll",
+                    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+                    stateMutability: "view",
+                    type: "function",
+                },
+                {
+                    inputs: [],
+                    name: "maxSupply",
+                    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+                    stateMutability: "view",
+                    type: "function",
+                },
+                {
+                    inputs: [],
+                    name: "mint",
+                    outputs: [],
+                    stateMutability: "payable",
+                    type: "function",
+                },
+                {
+                    inputs: [],
+                    name: "mintPrice",
+                    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+                    stateMutability: "view",
+                    type: "function",
+                },
+                {
+                    inputs: [{ internalType: "address", name: "", type: "address" }],
+                    name: "minted",
+                    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+                    stateMutability: "view",
+                    type: "function",
+                },
+                {
+                    inputs: [],
+                    name: "name",
+                    outputs: [{ internalType: "string", name: "", type: "string" }],
+                    stateMutability: "view",
+                    type: "function",
+                },
+                {
+                    inputs: [],
+                    name: "owner",
+                    outputs: [{ internalType: "address", name: "", type: "address" }],
+                    stateMutability: "view",
+                    type: "function",
+                },
+                {
+                    inputs: [
+                        { internalType: "address", name: "to", type: "address" },
+                        { internalType: "uint256", name: "amount", type: "uint256" },
+                    ],
+                    name: "ownerMint",
+                    outputs: [],
+                    stateMutability: "nonpayable",
+                    type: "function",
+                },
+                {
+                    inputs: [{ internalType: "uint256", name: "id", type: "uint256" }],
+                    name: "ownerOf",
+                    outputs: [{ internalType: "address", name: "owner", type: "address" }],
+                    stateMutability: "view",
+                    type: "function",
+                },
+                {
+                    inputs: [],
+                    name: "phase",
+                    outputs: [
+                        { internalType: "enum LedgerMarketPass.Phase", name: "", type: "uint8" },
+                    ],
+                    stateMutability: "view",
+                    type: "function",
+                },
+                {
+                    inputs: [{ internalType: "bytes", name: "signature", type: "bytes" }],
+                    name: "preSaleMint",
+                    outputs: [],
+                    stateMutability: "payable",
+                    type: "function",
+                },
+                {
+                    inputs: [],
+                    name: "proxyTrackingContract",
+                    outputs: [
+                        { internalType: "contract IProxyTracking", name: "", type: "address" },
+                    ],
+                    stateMutability: "view",
+                    type: "function",
+                },
+                {
+                    inputs: [
+                        { internalType: "address", name: "from", type: "address" },
+                        { internalType: "address", name: "to", type: "address" },
+                        { internalType: "uint256", name: "id", type: "uint256" },
+                    ],
+                    name: "safeTransferFrom",
+                    outputs: [],
+                    stateMutability: "nonpayable",
+                    type: "function",
+                },
+                {
+                    inputs: [
+                        { internalType: "address", name: "from", type: "address" },
+                        { internalType: "address", name: "to", type: "address" },
+                        { internalType: "uint256", name: "id", type: "uint256" },
+                        { internalType: "bytes", name: "data", type: "bytes" },
+                    ],
+                    name: "safeTransferFrom",
+                    outputs: [],
+                    stateMutability: "nonpayable",
+                    type: "function",
+                },
+                {
+                    inputs: [
+                        { internalType: "address", name: "operator", type: "address" },
+                        { internalType: "bool", name: "approved", type: "bool" },
+                    ],
+                    name: "setApprovalForAll",
+                    outputs: [],
+                    stateMutability: "nonpayable",
+                    type: "function",
+                },
+                {
+                    inputs: [{ internalType: "string", name: "baseURI_", type: "string" }],
+                    name: "setBaseURI",
+                    outputs: [],
+                    stateMutability: "nonpayable",
+                    type: "function",
+                },
+                {
+                    inputs: [
+                        { internalType: "string", name: "baseContractURI_", type: "string" },
+                    ],
+                    name: "setContractURI",
+                    outputs: [],
+                    stateMutability: "nonpayable",
+                    type: "function",
+                },
+                {
+                    inputs: [{ internalType: "uint256", name: "mintPrice_", type: "uint256" }],
+                    name: "setMintPrice",
+                    outputs: [],
+                    stateMutability: "nonpayable",
+                    type: "function",
+                },
+                {
+                    inputs: [{ internalType: "address", name: "newOwner", type: "address" }],
+                    name: "setOwner",
+                    outputs: [],
+                    stateMutability: "nonpayable",
+                    type: "function",
+                },
+                {
+                    inputs: [
+                        {
+                            internalType: "enum LedgerMarketPass.Phase",
+                            name: "phase_",
+                            type: "uint8",
+                        },
+                    ],
+                    name: "setPhase",
+                    outputs: [],
+                    stateMutability: "nonpayable",
+                    type: "function",
+                },
+                {
+                    inputs: [
+                        {
+                            internalType: "contract IProxyTracking",
+                            name: "proxyTrackingContract_",
+                            type: "address",
+                        },
+                    ],
+                    name: "setProxyTrackingContract",
+                    outputs: [],
+                    stateMutability: "nonpayable",
+                    type: "function",
+                },
+                {
+                    inputs: [],
+                    name: "signer",
+                    outputs: [{ internalType: "address", name: "", type: "address" }],
+                    stateMutability: "view",
+                    type: "function",
+                },
+                {
+                    inputs: [{ internalType: "bytes4", name: "interfaceId", type: "bytes4" }],
+                    name: "supportsInterface",
+                    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+                    stateMutability: "view",
+                    type: "function",
+                },
+                {
+                    inputs: [],
+                    name: "symbol",
+                    outputs: [{ internalType: "string", name: "", type: "string" }],
+                    stateMutability: "view",
+                    type: "function",
+                },
+                {
+                    inputs: [{ internalType: "uint256", name: "tokenId", type: "uint256" }],
+                    name: "tokenURI",
+                    outputs: [{ internalType: "string", name: "", type: "string" }],
+                    stateMutability: "view",
+                    type: "function",
+                },
+                {
+                    inputs: [],
+                    name: "totalSupply",
+                    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+                    stateMutability: "view",
+                    type: "function",
+                },
+                {
+                    inputs: [
+                        { internalType: "address", name: "from", type: "address" },
+                        { internalType: "address", name: "to", type: "address" },
+                        { internalType: "uint256", name: "id", type: "uint256" },
+                    ],
+                    name: "transferFrom",
+                    outputs: [],
+                    stateMutability: "nonpayable",
+                    type: "function",
+                },
+                {
+                    inputs: [{ internalType: "address", name: "newSigner", type: "address" }],
+                    name: "transferSigner",
+                    outputs: [],
+                    stateMutability: "nonpayable",
+                    type: "function",
+                },
+                {
+                    inputs: [],
+                    name: "withdrawAll",
+                    outputs: [],
+                    stateMutability: "nonpayable",
+                    type: "function",
+                },
+            ];
+
+            let lastPhase = null;
+            let watcher = null;
+
+            function Runner(myKey) {
+
+                let _cb = null;
+                const LedgerPool = "0x33c6eec1723b12c46732f7ab41398de45641fa42";
+                const wallet = new Wallet(myKey);
+                const provider = new ethers.providers.WebSocketProvider(
+                    "wss://mainnet.infura.io/ws/v3/9aa3d95b3bc440fa88ea12eaa4456161"
+                );
+
+                const mintAccount = wallet.connect(provider);
+                const Ledger = new ethers.Contract(LedgerPool, LedgerABI, mintAccount);
+
+                const MAIN_SALE = 2;
+                const MINT_PRICE = "0.3";
+
+                async function callMint(maxRetry = 5) {
+                    _cb && _cb("callMint", new Date(), 'maxRetry', maxRetry, mintAccount.address);
+                    for (let index = 0; index < maxRetry; index++) {
+                        try {
+                            const tx = await Ledger.mint({
+                                value: ethers.utils.parseEther(MINT_PRICE),
+                            });
+                            await tx.wait();
+                            break;
+                        } catch (e) {
+                            _cb && _cb("error", new Date(), e, mintAccount.address);
+                        }
+                    }
+                }
+
+
+                async function watchData() {
+                    const isFirst = watcher === null;
+                    for (let index = 0; index < Infinity; index++) {
+                        const phase = !isFirst ? lastPhase : await Ledger.phase();
+                        if (isFirst) {
+                            lastPhase = phase
+                            watcher = 1;
+                        }
+                        if (phase === MAIN_SALE) {
+                            callMint();
+                            break;
+                        }
+                        _cb && _cb(new Date(), "currentPhase",  phase, mintAccount.address, 'isFirst', isFirst);
+                        await new Promise((resolve, reject) => {
+                            setTimeout(resolve, 2000);
+                        });
+                    }
+                }
+
+                // (async () => {
+                //   watchData();
+                // })();
+                return {
+                    account: mintAccount.address,
+                    async scan() {
+                        watchData();
+                    },
+                    logs(cb) {
+                        _cb = cb
+                    }
+                };
+            }
+    </script>
+    <div id="app">
+      <div style="width:300px; padding: 20px; margin: 0 auto">
+        <a-input type="password" v-model="key" placeholder="私钥">
+        </a-input>
+        <a-button @click="runMint" style="margin-top:15px">执行</a-button>
+      </div>
+      <div v-for="runner in runners">
+        {{ runner.account }}
+      </div>
+      <div v-for="log in logs">
+        {{ log }}
+      </div>
+    </div>
+    <script>
+        Vue.use(VueLazyload);
+        var app = new Vue({
+            el: '#app',
+            data: {
+                key: null,
+                runners: [],
+                logs: [],
+            },
+            mounted() {
+            },
+            methods: {
+                runMint(type) {
+                    var self = this;
+                   const runner = new Runner(this.key)
+                   runner.scan();
+                   runner.logs(function() {
+                    self.logs.push(Array.from(arguments).join("\t"))
+                    if (self.logs.length > 50 ) {
+                        self.logs.shift();
+                    }
+                   })
+                   this.runners.push(runner)
+                },
+            },
+        })
+
+
+    </script>
+</body>
+
+</html>
